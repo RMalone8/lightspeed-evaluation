@@ -165,6 +165,10 @@ class TurnData(StreamingMetricsMixin):
     tool_calls: Optional[list[list[dict[str, Any]]]] = Field(
         default=None, description="Actual Tool calls - populated by API if enabled"
     )
+    round_usage: Optional[list[dict[str, Any]]] = Field(
+        default=None,
+        description="Provider-reported token usage per LLM round - populated by API if available",
+    )
     contexts: Optional[list[str]] = Field(
         default=None, min_length=1, description="Contexts"
     )
@@ -744,6 +748,10 @@ class EvaluationResult(MetricResult, StreamingMetricsMixin):
     )
     tool_calls: Optional[str] = Field(
         default=None, description="Actual tool calls formatted as string"
+    )
+    round_usage: Optional[str] = Field(
+        default=None,
+        description="Provider-reported token usage per LLM round, formatted as a JSON string",
     )
     contexts: Optional[str] = Field(
         default=None, description="Contexts formatted as string"

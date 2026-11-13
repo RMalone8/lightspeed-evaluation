@@ -64,6 +64,8 @@ class APIDataAmender:
                     len(api_response.tool_calls),
                 )
                 turn_data.tool_calls = api_response.tool_calls
+            # Provider-reported usage per LLM round, when the API supplies it
+            turn_data.round_usage = getattr(api_response, "round_usage", None)
             # Update token usage from API output (with fallback to 0 if not present)
             turn_data.api_input_tokens = getattr(api_response, "input_tokens", 0)
             turn_data.api_output_tokens = getattr(api_response, "output_tokens", 0)

@@ -306,6 +306,7 @@ storage:
       - "embedding_tokens"
       - "judge_scores"
       - "tool_calls"
+      - "round_usage"      # Provider-reported token usage per LLM round (JSON; OLS streaming)
       - "contexts"
       - "expected_response"
       - "expected_intent"

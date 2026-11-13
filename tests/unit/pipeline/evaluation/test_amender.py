@@ -56,6 +56,22 @@ class TestAPIDataAmender:
         assert turn.conversation_id == "conv_123"
         assert turn.contexts == ["Context 1", "Context 2"]
 
+    def test_amend_single_turn_copies_round_usage(self, mocker: MockerFixture) -> None:
+        """Per-round provider usage from the API response is stored on the turn."""
+        usage = [{"round": 1, "handoff": True, "prompt_tokens": 42}]
+        mock_client = mocker.Mock()
+        mock_client.query.return_value = APIResponse(
+            response="Generated response",
+            conversation_id="conv_123",
+            round_usage=usage,
+        )
+        turn = TurnData(turn_id="1", query="Test query", response=None)
+
+        error_msg, _ = APIDataAmender(mock_client).amend_single_turn(turn)
+
+        assert error_msg is None
+        assert turn.round_usage == usage
+
     def test_amend_single_turn_with_conversation_id(
         self, mocker: MockerFixture
     ) -> None:

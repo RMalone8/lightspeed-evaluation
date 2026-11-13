@@ -650,6 +650,16 @@ These metrics are included in:
 - **JSON output**: Per-result fields and aggregate statistics in `streaming_performance`
 - **TXT output**: Aggregate statistics (mean, median, min/max) in the summary
 
+### Per-Round Token Usage
+
+When the streaming endpoint's `end` event carries a `round_usage` list (OLS reports it), the framework
+saves it in the `round_usage` CSV column as a JSON array with one record per LLM round (an OLS tool-calling
+round). Each record has `round`, `handoff` (whether the call was sent to a handoff backend), `model`,
+`usage_reported`, and the provider-reported `prompt_tokens` (including cached and cache-write tokens),
+`completion_tokens` (including reasoning tokens), `cached_tokens`, `cache_write_tokens` and
+`reasoning_tokens`. Token fields are `null` when the provider reported no usage. The column is empty for
+servers that do not send `round_usage`. It is in the default `csv_columns` in `config/system.yaml`.
+
 ## 🧪 Development
 
 ### Development Tools

@@ -411,6 +411,35 @@ class TestOutputHandlerInitialization:
 
         assert headers == ["conversation_group_id", "result", "score"]
 
+    def test_csv_includes_round_usage_column(
+        self, tmp_path: Path, mocker: MockerFixture
+    ) -> None:
+        """The round_usage column is a valid CSV column and carries the JSON string."""
+        usage = '[{"round": 1, "handoff": true, "prompt_tokens": 42}]'
+        results = [
+            EvaluationResult(
+                conversation_group_id="test_conv",
+                turn_id="turn1",
+                metric_identifier="test:metric",
+                result="PASS",
+                round_usage=usage,
+            )
+        ]
+        file_config = FileBackendConfig(
+            csv_columns=["conversation_group_id", "round_usage"]
+        )
+        system_config = mocker.Mock()
+        system_config.storage = [file_config]
+        system_config.visualization.enabled_graphs = []
+
+        handler = OutputHandler(output_dir=str(tmp_path), system_config=system_config)
+        csv_file = handler._generate_csv_report(results, "test_eval")
+
+        with open(csv_file, encoding="utf-8") as f:
+            rows = list(csv_module.DictReader(f))
+
+        assert rows == [{"conversation_group_id": "test_conv", "round_usage": usage}]
+
     def test_filename_timestamp_format(
         self, tmp_path: Path, mocker: MockerFixture
     ) -> None:

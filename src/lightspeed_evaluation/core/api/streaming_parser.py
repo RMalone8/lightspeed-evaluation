@@ -60,6 +60,15 @@ class _PerformanceTracker:
 
 # Streaming event handlers
 @dataclass
+class _EndUsage:
+    """Token usage reported by the stream end event."""
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    rounds: list[dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass
 class StreamingContext:
     """Context for streaming response parsing."""
 
@@ -67,21 +76,21 @@ class StreamingContext:
     final_response: str = ""
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
     tool_calls_by_id: dict[str, dict[str, Any]] = field(default_factory=dict)
-    input_tokens: int = 0
-    output_tokens: int = 0
+    usage: _EndUsage = field(default_factory=_EndUsage)
     perf: _PerformanceTracker = field(default_factory=_PerformanceTracker)
 
     def to_response_dict(self) -> dict[str, Any]:
         """Convert context to response dictionary."""
         streaming_duration, tokens_per_second = self.perf.get_metrics(
-            self.output_tokens
+            self.usage.output_tokens
         )
         return {
             "response": self.final_response,
             "tool_calls": _format_tool_sequences(self.tool_calls),
             "conversation_id": self.conversation_id,
-            "input_tokens": self.input_tokens,
-            "output_tokens": self.output_tokens,
+            "input_tokens": self.usage.input_tokens,
+            "output_tokens": self.usage.output_tokens,
+            "round_usage": self.usage.rounds,
             "time_to_first_token": self.perf.time_to_first_token,
             "streaming_duration": streaming_duration,
             "tokens_per_second": tokens_per_second,
@@ -143,8 +152,12 @@ def _handle_tool_result(ctx: StreamingContext, event_data: dict[str, Any]) -> No
 
 def _handle_end(ctx: StreamingContext, event_data: dict[str, Any]) -> None:
     """Record token usage from the stream end event."""
-    ctx.input_tokens = event_data.get("input_tokens", 0)
-    ctx.output_tokens = event_data.get("output_tokens", 0)
+    round_usage = event_data.get("round_usage")
+    ctx.usage = _EndUsage(
+        input_tokens=event_data.get("input_tokens", 0),
+        output_tokens=event_data.get("output_tokens", 0),
+        rounds=round_usage if isinstance(round_usage, list) else [],
+    )
 
 
 _STREAMING_EVENT_HANDLERS: dict[

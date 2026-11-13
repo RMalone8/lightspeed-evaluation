@@ -251,6 +251,44 @@ class TestParseStreamingResponse:
         assert result["input_tokens"] == 100
         assert result["output_tokens"] == 50
 
+    def test_end_event_round_usage_is_captured(self, mock_response: Any) -> None:
+        """Provider-reported usage per LLM round is passed through from the end event."""
+        round_usage = [
+            {"round": 1, "handoff": False, "prompt_tokens": 1000, "cached_tokens": 0},
+            {"round": 2, "handoff": True, "prompt_tokens": 1500, "cached_tokens": 900},
+        ]
+        mock_response.iter_lines.return_value = [
+            'data: {"event": "start", "data": {"conversation_id": "conv_usage"}}',
+            'data: {"event": "turn_complete", "data": {"token": "Done"}}',
+            "data: "
+            + json.dumps(
+                {
+                    "event": "end",
+                    "data": {
+                        "input_tokens": 10,
+                        "output_tokens": 5,
+                        "round_usage": round_usage,
+                    },
+                }
+            ),
+        ]
+
+        result = parse_streaming_response(mock_response)
+
+        assert result["round_usage"] == round_usage
+
+    def test_end_event_without_round_usage_gives_an_empty_list(
+        self, mock_response: Any
+    ) -> None:
+        """Servers that do not report per-round usage leave the list empty."""
+        mock_response.iter_lines.return_value = [
+            'data: {"event": "start", "data": {"conversation_id": "conv_plain"}}',
+            'data: {"event": "turn_complete", "data": {"token": "Done"}}',
+            'data: {"event": "end", "data": {"input_tokens": 10, "output_tokens": 5}}',
+        ]
+
+        assert not parse_streaming_response(mock_response)["round_usage"]
+
 
 class TestParseSSELine:
     """Unit tests for _parse_sse_line."""

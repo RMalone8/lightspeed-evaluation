@@ -190,6 +190,21 @@ class TestAPIResponse:
         assert len(response.contexts) == 2
         assert "chunk1" in response.contexts
 
+    def test_from_raw_response_keeps_round_usage(self) -> None:
+        """Per-round usage from the stream is kept; an empty list becomes None."""
+        usage = [{"round": 1, "handoff": False, "prompt_tokens": 10}]
+        base = {"response": "ok", "conversation_id": "conv123"}
+
+        assert (
+            APIResponse.from_raw_response({**base, "round_usage": usage}).round_usage
+            == usage
+        )
+        assert (
+            APIResponse.from_raw_response({**base, "round_usage": []}).round_usage
+            is None
+        )
+        assert APIResponse.from_raw_response(base).round_usage is None
+
     def test_from_raw_response_without_conversation_id(self) -> None:
         """Test that from_raw_response fails without conversation_id."""
         raw_data = {"response": "Test"}

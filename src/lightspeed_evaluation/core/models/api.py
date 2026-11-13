@@ -96,6 +96,10 @@ class APIResponse(StreamingMetricsMixin):
     contexts: list[str] = Field(default_factory=list, description="Context from API")
     input_tokens: int = Field(default=0, ge=0, description="Input tokens used")
     output_tokens: int = Field(default=0, ge=0, description="Output tokens used")
+    round_usage: Optional[list[dict[str, Any]]] = Field(
+        default=None,
+        description="Provider-reported token usage for each LLM round (streaming OLS only)",
+    )
 
     @classmethod
     def from_raw_response(cls, raw_data: dict[str, Any]) -> "APIResponse":
@@ -121,6 +125,7 @@ class APIResponse(StreamingMetricsMixin):
         time_to_first_token = raw_data.get("time_to_first_token")
         streaming_duration = raw_data.get("streaming_duration")
         tokens_per_second = raw_data.get("tokens_per_second")
+        round_usage = raw_data.get("round_usage") or None
 
         return cls(
             response=raw_data["response"].strip(),
@@ -132,4 +137,5 @@ class APIResponse(StreamingMetricsMixin):
             time_to_first_token=time_to_first_token,
             streaming_duration=streaming_duration,
             tokens_per_second=tokens_per_second,
+            round_usage=round_usage,
         )

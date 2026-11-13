@@ -125,6 +125,8 @@ SUPPORTED_CSV_COLUMNS = [
     "agent_latency",
     "tokens_per_second",
     "tool_calls",
+    # Provider-reported token usage per LLM round (JSON array)
+    "round_usage",
     "contexts",
     "expected_response",
     "expected_intent",
